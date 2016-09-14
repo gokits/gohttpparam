@@ -1,2 +1,2 @@
 # gohttpparam
-http param utility for golang
+http param parse and validation utility for golang
