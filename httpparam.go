@@ -1,16 +1,11 @@
 package gohttpparam
 
 import (
-	"net/http"
 	"reflect"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/YueHonghui/gotools"
-	"github.com/rs/xhandler"
-	//	"github.com/rs/xmux"
-	"golang.org/x/net/context"
 )
 
 type ErrTagInvalid struct {
@@ -37,6 +32,22 @@ func (e *ErrParamRequired) Error() string {
 	return "param " + e.Param + " required"
 }
 
+type ErrTypeNotSupported struct {
+	Field string
+}
+
+func (e *ErrTypeNotSupported) Error() string {
+	return "type of field " + e.Field + " not supported"
+}
+
+type ErrTagFieldNotFound struct {
+	Field string
+}
+
+func (e *ErrTagFieldNotFound) Error() string {
+	return "field " + e.Field + " of tag not found"
+}
+
 type ParamType int
 
 const (
@@ -50,37 +61,37 @@ type tagInfo struct {
 	Required bool
 }
 
-func decodeTag(field, tag string, t *tagInfo) (bool, error) {
+func decodeTag(field, tag string, t *tagInfo) error {
 	errtag := &ErrTagInvalid{
 		Field: field,
 	}
-	tags := strings.Split(tag, " ")
+	tags := strings.Split(tag, ",")
 	t.Required = false
 	for _, tf := range tags {
 		fs := strings.Split(tf, "=")
 		if fs[0] == "query" {
 			if len(fs) != 2 {
-				return false, errtag
+				return errtag
 			}
 			t.Type = Query
 			t.Name = fs[1]
-			return true, nil
 		} else if fs[0] == "path" {
 			if len(fs) != 2 {
-				return false, errtag
+				return errtag
 			}
 			t.Type = Path
 			t.Name = fs[1]
-			return true, nil
 		} else if fs[0] == "required" {
 			if len(fs) != 1 {
-				return false, errtag
+				return errtag
 			}
 			t.Required = true
-			return true, nil
 		}
 	}
-	return false, nil
+	if t.Name == "" {
+		return &ErrTagFieldNotFound{"path/query"}
+	}
+	return nil
 }
 
 func DecodeParams(params interface{}, pathget func(key string) (string, bool), queryget func(key string) (string, bool)) error {
@@ -96,20 +107,16 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 			continue
 		}
 		fv := values.FieldByName(t.Name)
-		if !fv.IsValid() {
+		if !fv.IsValid() || !fv.CanSet() {
 			continue
 		}
-		var pv interface{}
 		tagstr, ok := t.Tag.Lookup("param")
 		if !ok {
 			continue
 		}
-		ok, err := decodeTag(t.Name, tagstr, &taginfo)
+		err := decodeTag(t.Name, tagstr, &taginfo)
 		if err != nil {
 			return err
-		}
-		if !ok {
-			continue
 		}
 		var pvs string
 		if taginfo.Type == Query {
@@ -129,23 +136,82 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 		}
 		switch vetype.Kind() {
 		case reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Int:
-			pv, err := strconv.ParseInt(pvs, 10, 64)
+			pv, err := strconv.ParseInt(pvs, 10, vetype.Bits())
 			if err != nil {
 				return &ErrValueInvalid{t.Name}
 			}
-			if pv < -(1<<(uint64(vetype.Bits())-1)) || pv > (1<<(uint64(vetype.Bits())-1))-1 {
+			if t.Type.Kind() == reflect.Ptr {
+				if fv.IsNil() {
+					intptr := reflect.New(fv.Type().Elem())
+					intptr.Elem().SetInt(pv)
+					fv.Set(intptr)
+				} else {
+					fv.Elem().SetInt(pv)
+				}
+			} else {
+				fv.SetInt(pv)
+			}
+		case reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8, reflect.Uint:
+			pv, err := strconv.ParseUint(pvs, 10, vetype.Bits())
+			if err != nil {
 				return &ErrValueInvalid{t.Name}
 			}
 			if t.Type.Kind() == reflect.Ptr {
-
+				if fv.IsNil() {
+					integar := reflect.New(fv.Type().Elem())
+					integar.Elem().SetUint(pv)
+					fv.Set(integar)
+				} else {
+					fv.Elem().SetUint(pv)
+				}
+			} else {
+				fv.SetUint(pv)
 			}
+		case reflect.String:
+			if t.Type.Kind() == reflect.Ptr {
+				if fv.IsNil() {
+					strptr := &pvs
+					fv.Set(reflect.ValueOf(strptr))
+				} else {
+					fv.Elem().SetString(pvs)
+				}
+			} else {
+				fv.SetString(pvs)
+			}
+		case reflect.Bool:
+			b, err := strconv.ParseBool(pvs)
+			if err != nil {
+				return &ErrValueInvalid{t.Name}
+			}
+			if t.Type.Kind() == reflect.Ptr {
+				if fv.IsNil() {
+					bptr := &b
+					fv.Set(reflect.ValueOf(bptr))
+				} else {
+					fv.Elem().SetBool(b)
+				}
+			} else {
+				fv.SetBool(b)
+			}
+		case reflect.Float32, reflect.Float64:
+			f, err := strconv.ParseFloat(pvs, vetype.Bits())
+			if err != nil {
+				return &ErrValueInvalid{t.Name}
+			}
+			if t.Type.Kind() == reflect.Ptr {
+				if fv.IsNil() {
+					floatptr := reflect.New(vetype)
+					floatptr.Elem().SetFloat(f)
+					fv.Set(floatptr)
+				} else {
+					fv.Elem().SetFloat(f)
+				}
+			} else {
+				fv.SetFloat(f)
+			}
+		default:
+			return &ErrTypeNotSupported{t.Name}
 		}
 	}
-}
-
-func NewParamHttpC(f func(ctx context.Context, w http.ResponseWriter, r *http.Request), parampool *sync.Pool) xhandler.HandlerFuncC {
-	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
-		params := parampool.Get()
-
-	}
+	return nil
 }
