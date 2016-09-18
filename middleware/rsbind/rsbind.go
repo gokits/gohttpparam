@@ -1,4 +1,4 @@
-package rsxhandler
+package rsbind
 
 import (
 	"net/http"
