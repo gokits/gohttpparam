@@ -1,4 +1,4 @@
-package middleware
+package rsxhandler
 
 import (
 	"net/http"
@@ -9,7 +9,7 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-func RsXhandlerHttpC(ctx context.Context, w http.ResponseWriter, r *http.Request, param interface{}) (toContinue bool, err error) {
+func BindParam(ctx context.Context, w http.ResponseWriter, r *http.Request, param interface{}) (toContinue bool, err error) {
 	err = gohttpparam.DecodeParams(param,
 		func(key string) (v string, ok bool) {
 			ps := xmux.Params(ctx)
