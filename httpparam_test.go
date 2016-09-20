@@ -66,6 +66,7 @@ type param struct {
 	D *float32 `param:"path=d"`
 	E int
 	F *uint8 `param:"path=f"`
+	G *int   `param:"path=g,default=3"`
 }
 
 type notSupported struct {
@@ -90,6 +91,9 @@ func TestDecodeParamsNormal(t *testing.T) {
 	}
 	if p.A == nil || *p.A != "hahaha" || p.B == nil || *p.B != true || p.C == nil || *p.C != 33 || p.D == nil || *p.D != 1.242334353 || p.E != 0 || p.F != nil {
 		t.Errorf("DecodeParams incorrect")
+	}
+	if *p.G != 3 {
+		t.Errorf("default decode failed")
 	}
 }
 

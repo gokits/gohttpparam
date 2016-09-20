@@ -58,6 +58,7 @@ const (
 type tagInfo struct {
 	Type     ParamType
 	Name     string
+	Default  *string
 	Required bool
 }
 
@@ -86,6 +87,11 @@ func decodeTag(field, tag string, t *tagInfo) error {
 				return errtag
 			}
 			t.Required = true
+		} else if fs[0] == "default" {
+			if len(fs) != 2 {
+				return errtag
+			}
+			t.Default = &fs[1]
 		}
 	}
 	if t.Name == "" {
@@ -125,10 +131,15 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 			pvs, ok = pathget(taginfo.Name)
 		}
 		if !ok {
+			if !taginfo.Required && taginfo.Default == nil {
+				continue
+			}
 			if taginfo.Required {
 				return &ErrParamRequired{t.Name}
 			}
-			continue
+			if taginfo.Default != nil {
+				pvs = *taginfo.Default
+			}
 		}
 		vetype := t.Type
 		if vetype.Kind() == reflect.Ptr {
@@ -138,6 +149,9 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 		case reflect.Int64, reflect.Int32, reflect.Int16, reflect.Int8, reflect.Int:
 			pv, err := strconv.ParseInt(pvs, 10, vetype.Bits())
 			if err != nil {
+				if !ok {
+					return &ErrTagInvalid{t.Name}
+				}
 				return &ErrValueInvalid{t.Name}
 			}
 			if t.Type.Kind() == reflect.Ptr {
@@ -154,6 +168,9 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 		case reflect.Uint64, reflect.Uint32, reflect.Uint16, reflect.Uint8, reflect.Uint:
 			pv, err := strconv.ParseUint(pvs, 10, vetype.Bits())
 			if err != nil {
+				if !ok {
+					return &ErrTagInvalid{t.Name}
+				}
 				return &ErrValueInvalid{t.Name}
 			}
 			if t.Type.Kind() == reflect.Ptr {
@@ -181,6 +198,9 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 		case reflect.Bool:
 			b, err := strconv.ParseBool(pvs)
 			if err != nil {
+				if !ok {
+					return &ErrTagInvalid{t.Name}
+				}
 				return &ErrValueInvalid{t.Name}
 			}
 			if t.Type.Kind() == reflect.Ptr {
@@ -196,6 +216,9 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 		case reflect.Float32, reflect.Float64:
 			f, err := strconv.ParseFloat(pvs, vetype.Bits())
 			if err != nil {
+				if !ok {
+					return &ErrTagInvalid{t.Name}
+				}
 				return &ErrValueInvalid{t.Name}
 			}
 			if t.Type.Kind() == reflect.Ptr {
