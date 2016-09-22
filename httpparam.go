@@ -107,7 +107,6 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 	}
 	values = values.Elem()
 	fields := gotools.DeepFields(values.Type())
-	var taginfo tagInfo
 	for _, t := range fields {
 		if t.Anonymous {
 			continue
@@ -120,6 +119,7 @@ func DecodeParams(params interface{}, pathget func(key string) (string, bool), q
 		if !ok {
 			continue
 		}
+		var taginfo tagInfo
 		err := decodeTag(t.Name, tagstr, &taginfo)
 		if err != nil {
 			return err
