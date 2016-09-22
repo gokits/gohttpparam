@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/YueHonghui/gohttpparam"
+	"github.com/YueHonghui/validator"
 	"github.com/gin-gonic/gin"
-	"gopkg.in/validator.v2"
 )
 
 func BindParam(ctx *gin.Context, param interface{}) (status int, err error) {

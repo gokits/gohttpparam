@@ -9,7 +9,7 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-func BindParam(ctx context.Context, w http.ResponseWriter, r *http.Request, param interface{}) (toContinue bool, err error) {
+func BindParam(ctx context.Context, w http.ResponseWriter, r *http.Request, param interface{}) (statuscode int, err error) {
 	err = gohttpparam.DecodeParams(param,
 		func(key string) (v string, ok bool) {
 			ps := xmux.Params(ctx)
@@ -35,13 +35,10 @@ func BindParam(ctx context.Context, w http.ResponseWriter, r *http.Request, para
 	if err != nil {
 		switch err.(type) {
 		case *gohttpparam.ErrTagFieldNotFound, *gohttpparam.ErrTagInvalid, *gohttpparam.ErrTypeNotSupported:
-			w.WriteHeader(http.StatusInternalServerError)
-			return false, err
+			return http.StatusInternalServerError, err
 		default:
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte(err.Error()))
-			return false, nil
+			return http.StatusBadRequest, err
 		}
 	}
-	return true, nil
+	return http.StatusOK, nil
 }
