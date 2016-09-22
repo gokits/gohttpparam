@@ -8,7 +8,7 @@ import (
 	"gopkg.in/validator.v2"
 )
 
-func BindParam(ctx *gin.Context, param interface{}) (toContinue bool, err error) {
+func BindParam(ctx *gin.Context, param interface{}) (status int, err error) {
 	err = gohttpparam.DecodeParams(param,
 		ctx.Params.Get,
 		func(key string) (v string, ok bool) {
@@ -26,12 +26,10 @@ func BindParam(ctx *gin.Context, param interface{}) (toContinue bool, err error)
 	if err != nil {
 		switch err.(type) {
 		case *gohttpparam.ErrTagFieldNotFound, *gohttpparam.ErrTagInvalid, *gohttpparam.ErrTypeNotSupported:
-			ctx.AbortWithStatus(http.StatusInternalServerError)
-			return false, err
+			return http.StatusInternalServerError, err
 		default:
-			ctx.AbortWithError(http.StatusBadRequest, err)
-			return false, nil
+			return http.StatusBadRequest, err
 		}
 	}
-	return true, nil
+	return http.StatusOK, nil
 }
