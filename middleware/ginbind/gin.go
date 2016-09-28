@@ -1,14 +1,12 @@
 package ginbind
 
 import (
-	"net/http"
-
 	"github.com/YueHonghui/gohttpparam"
 	"github.com/YueHonghui/validator"
 	"github.com/gin-gonic/gin"
 )
 
-func BindParam(ctx *gin.Context, param interface{}) (status int, err error) {
+func BindParam(ctx *gin.Context, param interface{}) (err error) {
 	err = gohttpparam.DecodeParams(param,
 		ctx.Params.Get,
 		func(key string) (v string, ok bool) {
@@ -26,10 +24,10 @@ func BindParam(ctx *gin.Context, param interface{}) (status int, err error) {
 	if err != nil {
 		switch err.(type) {
 		case *gohttpparam.ErrTagFieldNotFound, *gohttpparam.ErrTagInvalid, *gohttpparam.ErrTypeNotSupported:
-			return http.StatusInternalServerError, err
+			panic(err)
 		default:
-			return http.StatusBadRequest, err
+			return
 		}
 	}
-	return http.StatusOK, nil
+	return nil
 }
