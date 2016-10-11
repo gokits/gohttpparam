@@ -3,7 +3,7 @@ package rsbind
 import (
 	"net/http"
 
-	"github.com/YueHonghui/gohttpparam"
+	"github.com/golibraries/gohttpparam"
 	"github.com/YueHonghui/validator"
 	"github.com/rs/xmux"
 	"golang.org/x/net/context"
