@@ -1,7 +1,7 @@
 package ginbind
 
 import (
-	"github.com/YueHonghui/gohttpparam"
+	"github.com/golibraries/gohttpparam"
 	"github.com/YueHonghui/validator"
 	"github.com/gin-gonic/gin"
 )
