@@ -1,9 +1,9 @@
 package ginbind
 
 import (
-	"github.com/golibraries/gohttpparam"
-	"github.com/YueHonghui/validator"
 	"github.com/gin-gonic/gin"
+	"github.com/gokits/gohttpparam"
+	"github.com/gokits/validator"
 )
 
 func BindParam(ctx *gin.Context, param interface{}) (err error) {

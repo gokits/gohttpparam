@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/golibraries/gotools"
+	"github.com/gokits/gotools"
 )
 
 type ErrTagInvalid struct {
