@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gokits/gohttpparam"
-	"github.com/gokits/validator"
+	"github.com/go-validator/validator"
 	"github.com/rs/xmux"
 	"golang.org/x/net/context"
 )
