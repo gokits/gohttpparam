@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gokits/gohttpparam"
-	"github.com/go-validator/validator"
 	"github.com/rs/xmux"
 	"golang.org/x/net/context"
+	"gopkg.in/validator.v2"
 )
 
 func BindParam(ctx context.Context, w http.ResponseWriter, r *http.Request, param interface{}) (err error) {

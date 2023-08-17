@@ -3,7 +3,7 @@ package ginbind
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/gokits/gohttpparam"
-	"github.com/go-validator/validator"
+	"gopkg.in/validator.v2"
 )
 
 func BindParam(ctx *gin.Context, param interface{}) (err error) {
